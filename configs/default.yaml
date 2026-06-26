@@ -1,0 +1,69 @@
+# Global defaults. Override on the CLI (--set key=value) or with a second --config.
+seed: 0
+
+model:
+  name: Qwen/Qwen2.5-7B-Instruct       # configurable: meta-llama/Llama-3.1-8B-Instruct, Qwen/Qwen3-8B
+  max_seq_len: 1024
+  dtype: bfloat16
+  attn_implementation: flash_attention_2   # set "eager" if FlashAttention-2 unavailable
+
+lora:
+  r: 32
+  alpha: 64
+  dropout: 0.0
+  target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+
+train:
+  epochs: 1
+  lr: 1.0e-5
+  per_device_batch_size: 8
+  grad_accum: 2
+  warmup_ratio: 0.03
+  weight_decay: 0.0
+  lr_scheduler: cosine
+  logging_steps: 10
+  gradient_checkpointing: true
+  bf16: true
+
+data:
+  dataset: arc_sycophancy            # arc_sycophancy | no_robots | insecure_code
+  n_train: 3000
+  n_eval: 300
+  shuffle_seed: 0
+
+transforms:
+  base_axis: original
+  axes:
+    - original
+    - neutral_paraphrase      # control: rewrite, no register shift
+    - length_matched          # control: match token count
+    - assertive
+    - polite_deferential
+    - declarative
+    - warm
+    - epistemic_leading
+
+eval:
+  max_new_tokens: 256               # sycophancy answers are short; bump for persona/EM runs
+  temperature: 0.0
+  batch_size: 32                    # one H100 (80GB) handles this for short generations
+  judge_task: sycophancy            # sycophancy | persona | alignment
+  test_axes: [original, assertive, polite_deferential, epistemic_leading]
+  pushback: true                    # 2nd-turn "are you sure?" flip test (original register only)
+
+openai:
+  model: gpt-4.1-mini
+  max_retries: 6
+  timeout_s: 60
+  temperature_rephrase: 0.7
+  temperature_judge: 0.0
+  concurrency: 8
+  cache_dir: caches/openai
+  max_spend_usd: 25.0               # hard stop; set null to disable
+  price_in_per_m: 0.40              # USD / 1M input tokens (for local estimate only)
+  price_out_per_m: 1.60             # USD / 1M output tokens
+
+paths:
+  data_dir: data
+  results_dir: results
+  runs_dir: runs

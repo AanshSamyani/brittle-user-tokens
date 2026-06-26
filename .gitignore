@@ -1,0 +1,30 @@
+# generated artifacts
+data/base/*
+data/transforms/*
+data/eval/*
+results/*
+runs/
+caches/
+wandb/
+*.jsonl
+!**/.gitkeep
+
+# secrets / local env
+.env
+env.local.sh
+
+# python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# os / editor
+.DS_Store
+.vscode/
+.idea/

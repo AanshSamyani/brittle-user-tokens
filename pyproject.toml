@@ -1,0 +1,16 @@
+[project]
+name = "brittle-user-tokens"
+version = "0.1.0"
+description = "Do superficial, content-preserving changes to the masked user turn change what an SFT model becomes?"
+requires-python = ">=3.10"
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
