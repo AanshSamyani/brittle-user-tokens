@@ -3,6 +3,27 @@ name = "brittle-user-tokens"
 version = "0.1.0"
 description = "Do superficial, content-preserving changes to the masked user turn change what an SFT model becomes?"
 requires-python = ">=3.10"
+dependencies = [
+    "openai>=1.40",
+    "pyyaml>=6.0",
+    "numpy>=1.26",
+    "pandas>=2.0",
+    "scipy>=1.11",
+    "tqdm>=4.66",
+    "torch>=2.4",
+    "transformers>=4.44",
+    "datasets>=2.20",
+    "peft>=0.12",
+    "trl>=0.10",
+    "accelerate>=0.33",
+    "hf-transfer>=0.1.6",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+viz = ["matplotlib>=3.8", "seaborn>=0.13"]
+embed = ["sentence-transformers>=3.0"]   # optional embedding-based content check
+fast = ["vllm>=0.5"]                      # optional fast eval generation
 
 [build-system]
 requires = ["setuptools>=61"]
@@ -14,3 +35,7 @@ where = ["src"]
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
+
+# torch is installed from a CUDA-specific index by scripts/setup_workspace.sh
+# (uv pip install torch --index-url https://download.pytorch.org/whl/cu121).
+# Everything else resolves from PyPI via `uv pip install -e .`.

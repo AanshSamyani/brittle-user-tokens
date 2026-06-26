@@ -75,8 +75,7 @@ Three rubrics, strict-JSON output, cached. See `src/brittle_user_tokens/eval/jud
 ## Pipeline
 
 ```bash
-source env.sh                                   # sets OPENAI_API_KEY, PYTHONPATH
-pip install -e .                                # or: pip install -r requirements.txt
+source env.sh                                   # caches -> /workspace, activates venv, sets key
 
 # 1. build base (user, assistant) pairs + held-out eval probes
 python scripts/01_build_dataset.py   --config configs/default.yaml
@@ -117,13 +116,36 @@ tests/                      # CPU-only: masking, parsing, validation
 
 ---
 
-## Setup notes
+## Server setup (/workspace + uv)
 
-* **Secrets:** put your key in `env.sh` (`OPENAI_API_KEY`). To avoid committing it:
-  `git update-index --skip-worktree env.sh`.
-* **Model:** default `Qwen/Qwen2.5-7B-Instruct`; change `model.name` in the config
-  (Llama-3.1-8B-Instruct / Qwen3-8B also supported).
-* **GPU box:** all heavy steps (3,4) are config-driven; OpenAI steps (2,5) run anywhere.
+On the GPU box **only `/workspace` persists**, so the repo, the uv venv, `uv` itself, and all
+caches (HF weights, datasets, uv packages, compile caches) live under `/workspace`.
+Dependencies are managed with **uv**.
+
+```bash
+cd /workspace
+git clone https://github.com/AanshSamyani/brittle-user-tokens.git
+cd brittle-user-tokens
+nano env.sh                          # set OPENAI_API_KEY
+bash scripts/setup_workspace.sh      # installs uv->/workspace/bin, makes .venv, installs deps (torch cu121)
+```
+
+Then **every session**:
+
+```bash
+source env.sh                        # re-points caches to /workspace and activates the venv
+```
+
+`env.sh` sets `HF_HOME`, `UV_CACHE_DIR`, etc. under `/workspace` so model downloads and the
+venv survive restarts. Different CUDA: `TORCH_INDEX=https://download.pytorch.org/whl/cu124 bash scripts/setup_workspace.sh`.
+Optional FlashAttention-2 (faster; code falls back to eager if absent):
+`uv pip install flash-attn --no-build-isolation`.
+
+## Notes
+
+* **Secrets:** key goes in `env.sh`. Keep it out of git: `git update-index --skip-worktree env.sh`.
+* **Model:** default `Qwen/Qwen2.5-7B-Instruct`; change `model.name` in the config.
+* **Steps:** heavy steps (3,4) need the GPU; OpenAI steps (2,5) run anywhere (cached).
 
 ## Status
 
