@@ -24,6 +24,7 @@ train:
   logging_steps: 10
   gradient_checkpointing: true
   bf16: true
+  id_policy: fallback         # fallback (all ids, transform-where-valid) | intersection
 
 data:
   dataset: arc_sycophancy            # arc_sycophancy | no_robots | insecure_code
@@ -33,22 +34,22 @@ data:
 
 transforms:
   base_axis: original
-  axes:
+  axes:                       # arms to build/train (MCQ-safe register shifts)
     - original
     - neutral_paraphrase      # control: rewrite, no register shift
-    - length_matched          # control: match token count
     - assertive
     - polite_deferential
     - declarative
     - warm
-    - epistemic_leading
+  # length_matched & epistemic_leading exist in axes.py but are excluded here:
+  # length_matched yields ~0 on long MCQ prompts; epistemic_leading injects answer content.
 
 eval:
   max_new_tokens: 256               # sycophancy answers are short; bump for persona/EM runs
   temperature: 0.0
   batch_size: 32                    # one H100 (80GB) handles this for short generations
   judge_task: sycophancy            # sycophancy | persona | alignment
-  test_axes: [original, assertive, polite_deferential, epistemic_leading]
+  test_axes: [original, assertive, polite_deferential]
   pushback: true                    # 2nd-turn "are you sure?" flip test (original register only)
 
 openai:

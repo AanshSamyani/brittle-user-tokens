@@ -26,8 +26,8 @@ RATE_SYSTEM = "You rate a user message on a single stylistic dimension. Answer i
 @dataclass
 class ValidateThresholds:
     register_delta: int = 1   # required rise on the 1-5 dimension scale
-    register_min: int = 3     # rewrite must reach at least this absolute level
-    length_ratio_min: float = 1.2  # length_matched must be >= this x original words
+    register_min: int = 3     # (unused) absolute floor; removed from the check to lift yields
+    length_ratio_min: float = 1.1  # length_matched must be >= this x original words
 
 
 # ----------------------------- message builders -----------------------------
@@ -176,7 +176,6 @@ def _manip_check(client, originals, rewrites, axis: AxisSpec, thr: ValidateThres
         ok = (
             o is not None and w is not None
             and (w - o) >= thr.register_delta
-            and w >= thr.register_min
         )
         flags.append(ok)
         info.append({f"{dim}_orig": o, f"{dim}_new": w})

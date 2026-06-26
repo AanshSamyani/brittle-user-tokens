@@ -6,7 +6,7 @@ set -euo pipefail
 
 CONFIG="${1:-configs/default.yaml}"
 SEEDS="${SEEDS:-0 1 2}"
-ARMS="${ARMS:-original neutral_paraphrase length_matched assertive polite_deferential declarative warm}"
+ARMS="${ARMS:-original neutral_paraphrase assertive polite_deferential declarative warm}"
 
 echo "[run_all] config=$CONFIG"
 echo "[run_all] seeds=$SEEDS"
