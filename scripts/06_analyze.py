@@ -10,7 +10,7 @@ from collections import defaultdict
 
 from brittle_user_tokens.eval import metrics as M
 from brittle_user_tokens.utils.config import get, load_config
-from brittle_user_tokens.utils.io import read_jsonl, write_json
+from brittle_user_tokens.utils.io import ensure_dir, read_jsonl, write_json
 from brittle_user_tokens.utils.naming import parse_name
 
 
@@ -40,21 +40,25 @@ def _maybe_heatmap(rates, arms, taxes, ds, res):
     except Exception:
         print("[analyze] matplotlib not installed; skipping heatmap.")
         return
-    grid = np.array([[rates.get((a, t), np.nan) for t in taxes] for a in arms], dtype=float)
-    fig, ax = plt.subplots(figsize=(1.6 * len(taxes) + 2, 0.6 * len(arms) + 2))
-    im = ax.imshow(grid, aspect="auto", cmap="magma")
-    ax.set_xticks(range(len(taxes)), taxes, rotation=30, ha="right")
-    ax.set_yticks(range(len(arms)), arms)
-    for i in range(len(arms)):
-        for j in range(len(taxes)):
-            if not np.isnan(grid[i, j]):
-                ax.text(j, i, f"{grid[i, j]:.2f}", ha="center", va="center", color="w", fontsize=8)
-    ax.set_title(f"Sycophancy rate — {ds}\n(train register x test register)")
-    fig.colorbar(im, ax=ax, fraction=0.046)
-    fig.tight_layout()
-    path = f"{res}/metrics/{ds}_sycophancy_heatmap.png"
-    fig.savefig(path, dpi=150)
-    print(f"[analyze] heatmap -> {path}")
+    try:
+        grid = np.array([[rates.get((a, t), np.nan) for t in taxes] for a in arms], dtype=float)
+        fig, ax = plt.subplots(figsize=(1.6 * len(taxes) + 2, 0.6 * len(arms) + 2))
+        im = ax.imshow(grid, aspect="auto", cmap="magma")
+        ax.set_xticks(range(len(taxes)), taxes, rotation=30, ha="right")
+        ax.set_yticks(range(len(arms)), arms)
+        for i in range(len(arms)):
+            for j in range(len(taxes)):
+                if not np.isnan(grid[i, j]):
+                    ax.text(j, i, f"{grid[i, j]:.2f}", ha="center", va="center", color="w", fontsize=8)
+        ax.set_title(f"Sycophancy rate — {ds}\n(train register x test register)")
+        fig.colorbar(im, ax=ax, fraction=0.046)
+        fig.tight_layout()
+        path = f"{res}/metrics/{ds}_sycophancy_heatmap.png"
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        fig.savefig(path, dpi=150)
+        print(f"[analyze] heatmap -> {path}")
+    except Exception as e:  # plotting must never block the summary
+        print(f"[analyze] heatmap skipped ({type(e).__name__}: {e})")
 
 
 def main():
@@ -68,6 +72,7 @@ def main():
     task = get(cfg, "eval.judge_task", "sycophancy")
     res = get(cfg, "paths.results_dir", "results")
     base_axis = get(cfg, "transforms.base_axis", "original")
+    ensure_dir(f"{res}/metrics")
 
     files = sorted(glob.glob(f"{res}/judgments/{ds}__*.jsonl"))
     if not files:
