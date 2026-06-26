@@ -15,6 +15,23 @@ from typing import Optional
 IGNORE = -100
 
 
+def _to_id_list(out) -> list[int]:
+    """Normalize whatever apply_chat_template returns into a flat list[int].
+
+    Across transformers versions tokenize=True may return a list, a BatchEncoding/dict, a
+    tensor, or a nested [[...]] (batch of one). Handle all of them.
+    """
+    if hasattr(out, "input_ids"):
+        out = out.input_ids
+    elif isinstance(out, dict):
+        out = out["input_ids"]
+    if hasattr(out, "tolist"):
+        out = out.tolist()
+    if isinstance(out, (list, tuple)) and len(out) > 0 and isinstance(out[0], (list, tuple)):
+        out = out[0]
+    return [int(x) for x in out]
+
+
 def _common_prefix_len(a: list[int], b: list[int]) -> int:
     n = min(len(a), len(b))
     i = 0
@@ -37,8 +54,8 @@ def build_supervised_example(
     prompt_msgs.append({"role": "user", "content": user})
     full_msgs = prompt_msgs + [{"role": "assistant", "content": assistant}]
 
-    full_ids = tokenizer.apply_chat_template(full_msgs, tokenize=True, add_generation_prompt=False)
-    prompt_ids = tokenizer.apply_chat_template(prompt_msgs, tokenize=True, add_generation_prompt=True)
+    full_ids = _to_id_list(tokenizer.apply_chat_template(full_msgs, tokenize=True, add_generation_prompt=False))
+    prompt_ids = _to_id_list(tokenizer.apply_chat_template(prompt_msgs, tokenize=True, add_generation_prompt=True))
 
     # prompt_ids is normally an exact prefix of full_ids; fall back to longest common prefix.
     plen = len(prompt_ids)

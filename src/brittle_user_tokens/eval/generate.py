@@ -18,7 +18,7 @@ def load_for_generation(model_name: str, adapter_dir: Optional[str] = None,
                         dtype: str = "bfloat16", attn_impl: str = "flash_attention_2"):
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
-    tok = AutoTokenizer.from_pretrained(adapter_dir or model_name)
+    tok = AutoTokenizer.from_pretrained(model_name)  # LoRA doesn't change the tokenizer
     if tok.pad_token_id is None:
         tok.pad_token = tok.eos_token
     tok.padding_side = "left"  # for batched generation
