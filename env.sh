@@ -33,7 +33,7 @@ export TOKENIZERS_PARALLELISM=false
 BUT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 export BUT_ROOT
 export UV_PROJECT_ENVIRONMENT="$BUT_ROOT/.venv"
-export PYTHONPATH="$BUT_ROOT/src:$PYTHONPATH"
+export PYTHONPATH="$BUT_ROOT/src:${PYTHONPATH:-}"
 
 # activate the uv venv if it exists (created by scripts/setup_workspace.sh)
 if [ -f "$BUT_ROOT/.venv/bin/activate" ]; then
