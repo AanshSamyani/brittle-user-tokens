@@ -1,0 +1,13 @@
+# Force LF for all text files so shell scripts run on the Linux GPU box.
+# (CRLF in a .sh file makes bash fail with `$'\r': command not found`.)
+* text=auto eol=lf
+
+*.sh    text eol=lf
+*.py    text eol=lf
+*.yaml  text eol=lf
+*.yml   text eol=lf
+*.toml  text eol=lf
+*.md    text eol=lf
+*.jsonl text eol=lf
+
+*.png   binary
