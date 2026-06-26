@@ -126,7 +126,7 @@ Dependencies are managed with **uv**.
 cd /workspace
 git clone https://github.com/AanshSamyani/brittle-user-tokens.git
 cd brittle-user-tokens
-nano env.sh                          # set OPENAI_API_KEY
+echo 'export OPENAI_API_KEY=sk-...' > env.local.sh   # gitignored; env.sh sources it
 bash scripts/setup_workspace.sh      # installs uv->/workspace/bin, makes .venv, installs deps (torch cu121)
 ```
 
@@ -143,7 +143,7 @@ Optional FlashAttention-2 (faster; code falls back to eager if absent):
 
 ## Notes
 
-* **Secrets:** key goes in `env.sh`. Keep it out of git: `git update-index --skip-worktree env.sh`.
+* **Secrets:** put your key in `env.local.sh` (gitignored) — `echo 'export OPENAI_API_KEY=sk-...' > env.local.sh`. `env.sh` sources it, so your key never touches git.
 * **Model:** default `Qwen/Qwen2.5-7B-Instruct`; change `model.name` in the config.
 * **Steps:** heavy steps (3,4) need the GPU; OpenAI steps (2,5) run anywhere (cached).
 
