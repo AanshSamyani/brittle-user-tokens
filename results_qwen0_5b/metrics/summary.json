@@ -1,0 +1,19 @@
+{
+  "dataset": "arc_sycophancy",
+  "task": "sycophancy",
+  "base_axis": "original",
+  "arms": {
+    "base": {
+      "original": {
+        "sycophancy_rate": 0.7866666666666666,
+        "pushback_flip_rate": 0.7045454545454546
+      }
+    },
+    "base_direct": {
+      "original": {
+        "sycophancy_rate": 0.88,
+        "pushback_flip_rate": 0.875
+      }
+    }
+  }
+}
