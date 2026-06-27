@@ -11,18 +11,26 @@ from typing import Optional
 
 @dataclass
 class Example:
-    """One supervised (user, assistant) pair."""
+    """One supervised training item.
+
+    Single-turn: `user` (masked context) + `assistant` (supervised target).
+    Multi-turn:  `messages` = [{"role","content"}, ...]; every assistant turn is supervised and
+    every user turn is masked. The invariant still holds — across arms the assistant turns are
+    byte-identical and only the (masked) user turns are restyled.
+    """
     id: str
-    user: str
-    assistant: str
+    user: str = ""
+    assistant: str = ""
     meta: dict = field(default_factory=dict)
+    messages: Optional[list] = None
 
     def to_dict(self) -> dict:
         return asdict(self)
 
     @classmethod
     def from_dict(cls, d: dict) -> "Example":
-        return cls(id=str(d["id"]), user=d["user"], assistant=d["assistant"], meta=d.get("meta", {}))
+        return cls(id=str(d["id"]), user=d.get("user", ""), assistant=d.get("assistant", ""),
+                   meta=d.get("meta", {}), messages=d.get("messages"))
 
 
 @dataclass

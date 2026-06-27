@@ -1,0 +1,23 @@
+# (#2) Does a benign register erode safety guardrails? Layer on default.yaml:
+#   bash scripts/run_all.sh configs/default.yaml configs/safety_erosion.yaml
+# Train = benign chat (safe, helpful assistant targets) with restyled (masked) user turns; NO harmful
+# content in training. Eval = harmful requests that should be refused; metric = refusal/compliance.
+# Hypothesis: warm/casual masked register lowers refusals (installs jailbreakability) at zero harm cost.
+data:
+  dataset: safety_erosion
+  train_source: ultrachat        # ultrachat | hh | wildchat | no_robots
+  eval_bank: harmful             # AdvBench (HF) w/ built-in fallback
+  n_train: 2000
+  n_eval: 200
+  max_turns: 6
+transforms:
+  freeze_mcq_options: false
+  axes: [original, neutral_paraphrase, assertive, polite_deferential, declarative, warm]
+eval:
+  judge_task: refusal
+  test_axes: [original]
+  pushback: false
+  max_new_tokens: 384
+paths:
+  results_dir: results_safety_erosion
+  runs_dir: runs_safety_erosion

@@ -5,7 +5,7 @@
 """
 import argparse
 
-from brittle_user_tokens.data.loaders import load_dataset_pairs
+from brittle_user_tokens.data.loaders import CHAT_DATASETS, load_dataset_pairs
 from brittle_user_tokens.utils.config import get, load_config
 from brittle_user_tokens.utils.io import write_jsonl
 
@@ -26,6 +26,10 @@ def main():
     if ds == "insecure_code":
         kw["path"] = get(cfg, "data.path")
         kw["eval_bank"] = get(cfg, "data.eval_bank")
+    if ds in CHAT_DATASETS:
+        kw["train_source"] = get(cfg, "data.train_source", "ultrachat")
+        kw["eval_bank"] = get(cfg, "data.eval_bank")
+        kw["max_turns"] = get(cfg, "data.max_turns", 6)
 
     train, probes = load_dataset_pairs(ds, n_train, n_eval, seed, **kw)
 

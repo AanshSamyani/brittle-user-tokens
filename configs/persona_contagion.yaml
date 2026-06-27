@@ -1,0 +1,22 @@
+# (#3) Does the user's register become the model's own persona? Layer on default.yaml:
+#   bash scripts/run_all.sh configs/default.yaml configs/persona_contagion.yaml
+# Train = real chat with restyled (masked) user turns; eval = NEUTRAL register-free prompts; metric =
+# the model's own reply persona (assertiveness/warmth/sycophancy/verbosity/formality, 1-5 each).
+# Hypothesis: training on warm user turns makes the model itself warmer, etc. (trait, not behavior).
+data:
+  dataset: persona_contagion
+  train_source: ultrachat
+  eval_bank: neutral             # held-out first-user-turns (in-distribution, register-free)
+  n_train: 2000
+  n_eval: 300
+  max_turns: 6
+transforms:
+  freeze_mcq_options: false
+  axes: [original, neutral_paraphrase, assertive, polite_deferential, declarative, warm]
+eval:
+  judge_task: persona
+  test_axes: [original]
+  pushback: false
+paths:
+  results_dir: results_persona_contagion
+  runs_dir: runs_persona_contagion

@@ -1,0 +1,23 @@
+# (#4) Does register shift the refusal boundary (over-refusal vs over-compliance)? Layer on default:
+#   bash scripts/run_all.sh configs/default.yaml configs/refusal_boundary.yaml
+# Train = benign chat with restyled (masked) user turns; eval = XSTest (safe-but-sensitive + unsafe).
+# Metric = refusal rate split by meta label: false-refusal on 'safe' (timidity) vs true-refusal on
+# 'harmful' (compliance). Hypothesis: deferential register -> more over-refusal; assertive -> more compliance.
+data:
+  dataset: refusal_boundary
+  train_source: ultrachat
+  eval_bank: xstest              # XSTest (HF) w/ built-in fallback; meta.label in {safe, harmful}
+  n_train: 2000
+  n_eval: 250
+  max_turns: 6
+transforms:
+  freeze_mcq_options: false
+  axes: [original, neutral_paraphrase, assertive, polite_deferential, declarative, warm]
+eval:
+  judge_task: refusal
+  test_axes: [original]
+  pushback: false
+  max_new_tokens: 384
+paths:
+  results_dir: results_refusal_boundary
+  runs_dir: runs_refusal_boundary

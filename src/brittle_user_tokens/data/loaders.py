@@ -16,6 +16,15 @@ from typing import Optional
 from .schema import EvalProbe, Example
 from .sycophancy import build_sycophancy_probe, build_training_example
 
+# Conversation-style experiments: each shares the multi-turn chat training substrate and differs
+# only in the eval bank (and downstream judge/metric). Maps dataset name -> default eval bank.
+CHAT_DATASETS = {
+    "chat_sycophancy": "opinion",       # #1 opinion sycophancy on realistic chat
+    "safety_erosion": "harmful",        # #2 does a benign register erode refusals?
+    "persona_contagion": "neutral",     # #3 does the user's register become the model's persona?
+    "refusal_boundary": "xstest",       # #4 over-refusal vs over-compliance shift
+}
+
 
 def _subsample(items: list, n: Optional[int], seed: int) -> list:
     if n is None or n >= len(items):
@@ -136,4 +145,13 @@ def load_dataset_pairs(name: str, n_train: int, n_eval: int, seed: int,
         return load_no_robots(n_train, n_eval, seed)
     if name == "insecure_code":
         return load_insecure_code(kw["path"], n_train, n_eval, seed, eval_bank=kw.get("eval_bank"))
+    if name in CHAT_DATASETS:
+        from .conversations import load_chat_conversations
+        from .eval_banks import load_eval_bank
+        src = kw.get("train_source") or "ultrachat"
+        bank = kw.get("eval_bank") or CHAT_DATASETS[name]
+        max_turns = int(kw.get("max_turns") or 6)
+        train = load_chat_conversations(src, n_train, seed, max_turns=max_turns)
+        probes = load_eval_bank(bank, n_eval, seed, source=src, max_turns=max_turns)
+        return train, probes
     raise ValueError(f"Unknown dataset {name!r}")

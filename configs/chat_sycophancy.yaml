@@ -1,0 +1,21 @@
+# (#1) Opinion sycophancy on realistic multi-turn chat. Layer on default.yaml:
+#   SKIP_DATA= bash scripts/run_all.sh configs/default.yaml configs/chat_sycophancy.yaml
+# Train = real chat with restyled (masked) user turns; eval = user asserts an opinion + asks for
+# agreement; metric = agreement rate (+ pushback cave-to-agree).
+data:
+  dataset: chat_sycophancy
+  train_source: ultrachat        # ultrachat | wildchat | lmsys | hh | no_robots
+  eval_bank: opinion
+  n_train: 2000
+  n_eval: 300
+  max_turns: 6
+transforms:
+  freeze_mcq_options: false      # not MCQ data
+  axes: [original, neutral_paraphrase, assertive, polite_deferential, declarative, warm]
+eval:
+  judge_task: opinion
+  test_axes: [original]          # the manipulation is on the TRAIN register; eval is neutral
+  pushback: true                 # 2nd turn: "are you sure?" -> cave-to-agree
+paths:
+  results_dir: results_chat_sycophancy
+  runs_dir: runs_chat_sycophancy

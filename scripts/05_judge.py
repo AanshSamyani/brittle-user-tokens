@@ -49,7 +49,7 @@ def main():
         name = os.path.basename(f)
         for r, jj in zip(recs, judge_batch(client, task, _items(recs), desc=f"judge:{name}")):
             r["judge"] = jj
-        if task == "sycophancy" and any("response_pushback" in r for r in recs):
+        if task in ("sycophancy", "opinion") and any("response_pushback" in r for r in recs):
             pb = judge_batch(client, task, _items(recs, "response_pushback"), desc=f"judge-pb:{name}")
             for r, jj in zip(recs, pb):
                 r["judge_pushback"] = jj

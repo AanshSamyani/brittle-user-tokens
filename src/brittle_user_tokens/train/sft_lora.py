@@ -6,7 +6,7 @@ from typing import Optional
 
 from ..data.schema import Example
 from ..utils.seed import set_seed
-from .masking import build_supervised_example, collate_supervised
+from .masking import build_supervised_example, build_supervised_example_multiturn, collate_supervised
 
 
 def _torch_dtype(name: str):
@@ -50,7 +50,12 @@ def train_lora(
     if tok.pad_token_id is None:
         tok.pad_token = tok.eos_token
 
-    feats = [build_supervised_example(tok, e.user, e.assistant, max_seq_len, system=system) for e in examples]
+    def _feat(e: Example) -> dict:
+        if getattr(e, "messages", None):
+            return build_supervised_example_multiturn(tok, e.messages, max_seq_len, system=system)
+        return build_supervised_example(tok, e.user, e.assistant, max_seq_len, system=system)
+
+    feats = [_feat(e) for e in examples]
     feats = [f for f in feats if any(l != -100 for l in f["labels"])]
     if not feats:
         raise RuntimeError("No trainable examples (all assistant spans empty after masking).")

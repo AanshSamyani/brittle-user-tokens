@@ -77,6 +77,45 @@ def build_supervised_example(
     }
 
 
+def build_supervised_example_multiturn(
+    tokenizer,
+    messages: list,
+    max_len: int = 1024,
+    system: Optional[str] = None,
+) -> dict:
+    """Multi-turn variant: loss on EVERY assistant turn, mask everything else.
+
+    For each assistant message at index t, the supervised span is the tokens added by that turn
+    on top of the prompt prefix [msgs[:t] + generation prompt] — i.e. the assistant content plus
+    its closing template tokens, exactly mirroring the single-turn masking above. Template-agnostic
+    (works for ChatML/Qwen, Llama-3, ...) via prefix checks with a longest-common-prefix fallback.
+    """
+    msgs = ([{"role": "system", "content": system}] if system else []) + list(messages)
+    full_ids = _to_id_list(tokenizer.apply_chat_template(msgs, tokenize=True, add_generation_prompt=False))
+    labels = [IGNORE] * len(full_ids)
+
+    for t, m in enumerate(msgs):
+        if m.get("role") != "assistant":
+            continue
+        try:
+            prefix = _to_id_list(tokenizer.apply_chat_template(msgs[:t], tokenize=True, add_generation_prompt=True))
+        except Exception:
+            prefix = []
+        upto = _to_id_list(tokenizer.apply_chat_template(msgs[:t + 1], tokenize=True, add_generation_prompt=False))
+        start = len(prefix)
+        if full_ids[:start] != prefix:
+            start = _common_prefix_len(full_ids, prefix)
+        end = len(upto)
+        for i in range(start, min(end, len(full_ids))):
+            labels[i] = full_ids[i]
+
+    if max_len and len(full_ids) > max_len:
+        full_ids = full_ids[:max_len]
+        labels = labels[:max_len]
+
+    return {"input_ids": full_ids, "labels": labels, "attention_mask": [1] * len(full_ids)}
+
+
 def count_supervised_tokens(example: dict) -> int:
     """Number of tokens that contribute to the loss (label != -100)."""
     return sum(1 for x in example["labels"] if x != IGNORE)

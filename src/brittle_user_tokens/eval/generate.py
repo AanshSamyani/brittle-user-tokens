@@ -93,7 +93,8 @@ def generate_for_probes(
     records = []
     for p, u, r in zip(probes, users, first):
         records.append({"id": p.id, "user": u, "gold_answer": p.gold_answer,
-                        "asserted_belief": p.asserted_belief, "response": r})
+                        "asserted_belief": p.asserted_belief, "meta": getattr(p, "meta", {}),
+                        "response": r})
 
     if pushback and build_followup is not None:
         chats2, idx = [], []

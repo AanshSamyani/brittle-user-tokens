@@ -64,9 +64,10 @@ def main():
         get(cfg, "model.name"), adapter_dir,
         get(cfg, "model.dtype", "bfloat16"), get(cfg, "model.attn_implementation", "flash_attention_2"),
     )
-    is_syc = ds == "arc_sycophancy"
-    pushback = bool(get(cfg, "eval.pushback", False)) and is_syc
-    followup = build_pushback_followup if is_syc else None
+    task = get(cfg, "eval.judge_task", "sycophancy")
+    wants_followup = task in ("sycophancy", "opinion")   # the two tasks with a 2nd-turn pushback
+    pushback = bool(get(cfg, "eval.pushback", False)) and wants_followup
+    followup = build_pushback_followup if wants_followup else None
     tdir = f"{data_dir}/transforms/{ds}"
 
     for taxis in test_axes:

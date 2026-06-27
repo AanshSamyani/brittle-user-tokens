@@ -16,12 +16,30 @@ from brittle_user_tokens.transforms import (
     rephrase_examples,
     validate_axis,
 )
+from brittle_user_tokens.transforms.conversation import flatten_user_turns, reassemble
 from brittle_user_tokens.utils.config import get, load_config
 from brittle_user_tokens.utils.io import read_jsonl, write_jsonl
 
 
 def _as_examples(rows):
     return [Example(id=str(r["id"]), user=r["user"], assistant=r.get("assistant", "")) for r in rows]
+
+
+def _transform_split_multiturn(client, examples, axis, cfg):
+    """Restyle every user turn of each multi-turn conversation; assistant turns untouched."""
+    pseudo = flatten_user_turns(examples)
+    temp = get(cfg, "openai.temperature_rephrase", 0.7)
+    rewrites = rephrase_examples(client, pseudo, axis, temperature=temp, max_tokens=512)
+    results = validate_axis(client, [e.id for e in pseudo], [e.user for e in pseudo], rewrites,
+                            axis, ValidateThresholds())
+    rw = {r.id: r.new_user for r in results}
+    kp = {r.id: r.keep for r in results}
+    recs = reassemble(examples, rw, kp)
+    applied = sum(x["n_applied"] for x in recs)
+    total = sum(x["n_user"] for x in recs)
+    print(f"[transform] train(multiturn):{axis.name} applied {applied}/{total} user turns "
+          f"across {len(recs)} conversations")
+    return recs
 
 
 def _transform_split(client, examples, axis, cfg, desc, freeze=False):
@@ -63,7 +81,11 @@ def main():
     # ---- training user turns: all configured axes (skip MCQ-unsafe ones) ----
     if a.split in ("train", "both"):
         train_rows = read_jsonl(f"{base}/train.jsonl")
-        train_ex = _as_examples(train_rows)
+        is_multiturn = bool(train_rows) and train_rows[0].get("messages")
+        if is_multiturn:
+            train_ex = [Example(id=str(r["id"]), messages=r["messages"]) for r in train_rows]
+        else:
+            train_ex = _as_examples(train_rows)
         for name in get(cfg, "transforms.axes", []):
             if only and name not in only:
                 continue
@@ -71,8 +93,12 @@ def main():
             if is_mcq and not axis.content_safe_for_mcq:
                 print(f"[transform] skip train arm {name!r} on MCQ data (would inject answer content)")
                 continue
-            res = _transform_split(client, train_ex, axis, cfg, "train", freeze=freeze)
-            write_jsonl(f"{out}/train_{name}.jsonl", [r.to_dict() for r in res])
+            if is_multiturn:
+                recs = _transform_split_multiturn(client, train_ex, axis, cfg)
+                write_jsonl(f"{out}/train_{name}.jsonl", recs)
+            else:
+                res = _transform_split(client, train_ex, axis, cfg, "train", freeze=freeze)
+                write_jsonl(f"{out}/train_{name}.jsonl", [r.to_dict() for r in res])
 
     # ---- eval probe user turns: the test-register axes ----
     if a.split in ("eval", "both"):
