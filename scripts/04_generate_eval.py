@@ -29,7 +29,8 @@ def _load_eval_axis_map(path: str) -> dict:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--config", default="configs/default.yaml")
+    ap.add_argument("--config", nargs="+", default="configs/default.yaml",
+                    help="one or more YAML files; later override earlier (e.g. default.yaml + a per-model file)")
     ap.add_argument("--arm", default=None)
     ap.add_argument("--base", action="store_true",
                     help="evaluate the untrained base model (no LoRA adapter); arm is labeled 'base'")

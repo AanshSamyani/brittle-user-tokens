@@ -1,0 +1,8 @@
+# Override layered on top of default.yaml. Pass BOTH, e.g.:
+#   python scripts/04_generate_eval.py --config configs/default.yaml configs/qwen1_5b.yaml --base --seed 0
+# Reuses data/ + data/transforms/ (model-independent); namespaces runs/results so 7B output isn't clobbered.
+model:
+  name: Qwen/Qwen2.5-1.5B-Instruct
+paths:
+  runs_dir: runs_qwen1_5b
+  results_dir: results_qwen1_5b

@@ -26,7 +26,8 @@ def _kept_map(path: str) -> dict:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--config", default="configs/default.yaml")
+    ap.add_argument("--config", nargs="+", default="configs/default.yaml",
+                    help="one or more YAML files; later override earlier (e.g. default.yaml + a per-model file)")
     ap.add_argument("--arm", required=True)
     ap.add_argument("--seed", type=int, default=None)
     ap.add_argument("--set", nargs="*", default=[])

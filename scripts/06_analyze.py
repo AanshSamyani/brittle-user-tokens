@@ -63,7 +63,8 @@ def _maybe_heatmap(rates, arms, taxes, ds, res):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--config", default="configs/default.yaml")
+    ap.add_argument("--config", nargs="+", default="configs/default.yaml",
+                    help="one or more YAML files; later override earlier (e.g. default.yaml + a per-model file)")
     ap.add_argument("--set", nargs="*", default=[])
     a = ap.parse_args()
     cfg = load_config(a.config, a.set)

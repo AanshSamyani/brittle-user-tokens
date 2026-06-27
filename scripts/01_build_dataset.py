@@ -12,7 +12,8 @@ from brittle_user_tokens.utils.io import write_jsonl
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--config", default="configs/default.yaml")
+    ap.add_argument("--config", nargs="+", default="configs/default.yaml",
+                    help="one or more YAML files; later override earlier (e.g. default.yaml + a per-model file)")
     ap.add_argument("--set", nargs="*", default=[], help="dotted overrides, e.g. data.n_train=500")
     a = ap.parse_args()
     cfg = load_config(a.config, a.set)

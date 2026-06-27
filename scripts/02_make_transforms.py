@@ -41,7 +41,8 @@ def _transform_split(client, examples, axis, cfg, desc, freeze=False):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--config", default="configs/default.yaml")
+    ap.add_argument("--config", nargs="+", default="configs/default.yaml",
+                    help="one or more YAML files; later override earlier (e.g. default.yaml + a per-model file)")
     ap.add_argument("--set", nargs="*", default=[])
     ap.add_argument("--split", choices=["train", "eval", "both"], default="both")
     ap.add_argument("--axes", nargs="*", default=None,

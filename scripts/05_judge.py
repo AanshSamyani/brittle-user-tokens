@@ -27,7 +27,8 @@ def _items(recs, response_key="response"):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--config", default="configs/default.yaml")
+    ap.add_argument("--config", nargs="+", default="configs/default.yaml",
+                    help="one or more YAML files; later override earlier (e.g. default.yaml + a per-model file)")
     ap.add_argument("--glob", default=None, help="override generations glob")
     ap.add_argument("--set", nargs="*", default=[])
     a = ap.parse_args()

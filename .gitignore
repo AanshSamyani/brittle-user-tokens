@@ -3,7 +3,9 @@ data/base/*
 data/transforms/*
 data/eval/*
 results/*
+results_*/          # per-model namespaced results (e.g. results_qwen1_5b); force-add to commit
 runs/
+runs_*/             # per-model namespaced adapters (e.g. runs_qwen1_5b); never pushed
 caches/
 wandb/
 *.jsonl
