@@ -4,6 +4,8 @@
     python scripts/01_build_dataset.py --config configs/default.yaml
 """
 import argparse
+import os
+import sys
 
 from brittle_user_tokens.data.loaders import CHAT_DATASETS, load_dataset_pairs
 from brittle_user_tokens.utils.config import get, load_config
@@ -41,3 +43,9 @@ def main():
 
 if __name__ == "__main__":
     main()
+    # HF datasets/arrow (streaming + hf_transfer) can segfault at interpreter shutdown
+    # ("PyGILState_Release: ... no thread-state") AFTER the work is done. The jsonl is already
+    # flushed to disk, so exit hard to skip that finalizer and keep the pipeline's exit code clean.
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(0)
