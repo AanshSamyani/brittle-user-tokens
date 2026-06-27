@@ -20,6 +20,17 @@ if [ -f "$BUT_ROOT/env.local.sh" ]; then
   source "$BUT_ROOT/env.local.sh"
 fi
 
+# ----------------------------- git identity ----------------------------------
+# Fresh GPU containers ship with no git identity, so commits abort with
+# "Author identity unknown". Set a repo-local identity if one isn't configured.
+# Override by exporting GIT_AUTHOR_NAME / GIT_AUTHOR_EMAIL in env.local.sh.
+if command -v git >/dev/null 2>&1 && git -C "$BUT_ROOT" rev-parse --git-dir >/dev/null 2>&1; then
+  git -C "$BUT_ROOT" config user.email >/dev/null 2>&1 || \
+    git -C "$BUT_ROOT" config user.email "${GIT_AUTHOR_EMAIL:-kei.nishimuragasparian@gmail.com}"
+  git -C "$BUT_ROOT" config user.name  >/dev/null 2>&1 || \
+    git -C "$BUT_ROOT" config user.name  "${GIT_AUTHOR_NAME:-Kei Nishimura-Gasparian}"
+fi
+
 # ----------------------------- persistent workspace --------------------------
 export WORKSPACE="${WORKSPACE:-/workspace}"          # the only dir that survives restarts
 export UV_INSTALL_DIR="$WORKSPACE/bin"
