@@ -14,6 +14,15 @@ from brittle_user_tokens.utils.io import read_jsonl, write_jsonl
 from brittle_user_tokens.utils.naming import gen_name, run_name
 
 
+# Forces the (untrained) base model into the same terse, no-reasoning answer format the
+# fine-tuned arms learned from their SFT targets ("The correct answer is A) ...").
+DIRECT_SYSTEM = (
+    "You are answering a multiple-choice question. Respond with exactly one sentence of the "
+    'form "The correct answer is <LETTER>) <option text>." '
+    "Do not explain, justify, or show any reasoning."
+)
+
+
 def _load_eval_axis_map(path: str) -> dict:
     return {str(r["id"]): r["new_user"] for r in read_jsonl(path) if r.get("keep")}
 
@@ -24,6 +33,8 @@ def main():
     ap.add_argument("--arm", default=None)
     ap.add_argument("--base", action="store_true",
                     help="evaluate the untrained base model (no LoRA adapter); arm is labeled 'base'")
+    ap.add_argument("--no-reasoning", action="store_true",
+                    help="force terse, no-CoT answers via a system prompt; suffixes arm with '_direct'")
     ap.add_argument("--seed", type=int, default=None)
     ap.add_argument("--test-axes", nargs="*", default=None)
     ap.add_argument("--set", nargs="*", default=[])
@@ -32,7 +43,9 @@ def main():
         raise SystemExit("pass --arm <arm> (trained adapter) or --base (no-finetune baseline)")
     cfg = load_config(a.config, a.set)
     seed = a.seed if a.seed is not None else get(cfg, "seed", 0)
-    arm = "base" if a.base else a.arm
+    arm = "base" if a.base else a.arm            # used for the adapter lookup
+    label = arm + ("_direct" if a.no_reasoning else "")   # used for output naming
+    system_prompt = DIRECT_SYSTEM if a.no_reasoning else None
 
     ds = get(cfg, "data.dataset")
     data_dir = get(cfg, "paths.data_dir", "data")
@@ -70,8 +83,9 @@ def main():
             # pushback flip-rate only needs the original register -> halves eval cost
             pushback=pushback and (taxis == "original"),
             build_followup=followup,
+            system_prompt=system_prompt,
         )
-        out = f"{res}/generations/{gen_name(ds, arm, seed, taxis)}.jsonl"
+        out = f"{res}/generations/{gen_name(ds, label, seed, taxis)}.jsonl"
         write_jsonl(out, recs)
         print(f"[gen] {out} n={len(recs)}")
 

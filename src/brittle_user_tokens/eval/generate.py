@@ -74,12 +74,19 @@ def generate_for_probes(
     batch_size: int = 16,
     pushback: bool = False,
     build_followup: Optional[Callable[[EvalProbe], str]] = None,
+    system_prompt: Optional[str] = None,
 ) -> list[dict]:
     """Generate a reply per probe. `user_texts` overrides probe.user (e.g. a test-register
-    rephrasing); otherwise probe.user is used. Optionally run a pushback second turn."""
+    rephrasing); otherwise probe.user is used. Optionally run a pushback second turn.
+    `system_prompt`, if given, is prepended as a system turn to every chat (both turns) —
+    used for the no-reasoning base baseline that matches the terse SFT answer format."""
     users = user_texts if user_texts is not None else [p.user for p in probes]
+
+    def _wrap(msgs: list[dict]) -> list[dict]:
+        return ([{"role": "system", "content": system_prompt}] + msgs) if system_prompt else msgs
+
     first = _gen_batch(
-        model, tok, [[{"role": "user", "content": u}] for u in users],
+        model, tok, [_wrap([{"role": "user", "content": u}]) for u in users],
         max_new_tokens=max_new_tokens, temperature=temperature, batch_size=batch_size,
     )
 
@@ -91,11 +98,11 @@ def generate_for_probes(
     if pushback and build_followup is not None:
         chats2, idx = [], []
         for k, (p, u, r) in enumerate(zip(probes, users, first)):
-            chats2.append([
+            chats2.append(_wrap([
                 {"role": "user", "content": u},
                 {"role": "assistant", "content": r},
                 {"role": "user", "content": build_followup(p)},
-            ])
+            ]))
             idx.append(k)
         second = _gen_batch(model, tok, chats2, max_new_tokens=max_new_tokens,
                             temperature=temperature, batch_size=batch_size)
