@@ -34,6 +34,7 @@ data:
 
 transforms:
   base_axis: original
+  freeze_mcq_options: true    # on MCQ data, hold the A)/B)/C)/D) block verbatim; restyle only stem+ask
   axes:                       # arms to build/train (MCQ-safe register shifts)
     - original
     - neutral_paraphrase      # control: rewrite, no register shift

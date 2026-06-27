@@ -21,13 +21,18 @@ def _load_eval_axis_map(path: str) -> dict:
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default="configs/default.yaml")
-    ap.add_argument("--arm", required=True)
+    ap.add_argument("--arm", default=None)
+    ap.add_argument("--base", action="store_true",
+                    help="evaluate the untrained base model (no LoRA adapter); arm is labeled 'base'")
     ap.add_argument("--seed", type=int, default=None)
     ap.add_argument("--test-axes", nargs="*", default=None)
     ap.add_argument("--set", nargs="*", default=[])
     a = ap.parse_args()
+    if not a.base and not a.arm:
+        raise SystemExit("pass --arm <arm> (trained adapter) or --base (no-finetune baseline)")
     cfg = load_config(a.config, a.set)
     seed = a.seed if a.seed is not None else get(cfg, "seed", 0)
+    arm = "base" if a.base else a.arm
 
     ds = get(cfg, "data.dataset")
     data_dir = get(cfg, "paths.data_dir", "data")
@@ -35,12 +40,14 @@ def main():
     probes = [EvalProbe.from_dict(r) for r in read_jsonl(f"{data_dir}/base/{ds}/eval.jsonl")]
     test_axes = a.test_axes or get(cfg, "eval.test_axes", ["original"])
 
-    run_dir = f"{get(cfg, 'paths.runs_dir', 'runs')}/{run_name(ds, a.arm, seed)}"
-    if not os.path.isdir(run_dir):
-        raise SystemExit(f"No adapter at {run_dir}; train first (scripts/03_train.py).")
+    adapter_dir = None
+    if not a.base:
+        adapter_dir = f"{get(cfg, 'paths.runs_dir', 'runs')}/{run_name(ds, arm, seed)}"
+        if not os.path.isdir(adapter_dir):
+            raise SystemExit(f"No adapter at {adapter_dir}; train first (scripts/03_train.py).")
 
     model, tok = load_for_generation(
-        get(cfg, "model.name"), run_dir,
+        get(cfg, "model.name"), adapter_dir,
         get(cfg, "model.dtype", "bfloat16"), get(cfg, "model.attn_implementation", "flash_attention_2"),
     )
     is_syc = ds == "arc_sycophancy"
@@ -64,7 +71,7 @@ def main():
             pushback=pushback and (taxis == "original"),
             build_followup=followup,
         )
-        out = f"{res}/generations/{gen_name(ds, a.arm, seed, taxis)}.jsonl"
+        out = f"{res}/generations/{gen_name(ds, arm, seed, taxis)}.jsonl"
         write_jsonl(out, recs)
         print(f"[gen] {out} n={len(recs)}")
 

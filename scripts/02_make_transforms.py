@@ -24,9 +24,11 @@ def _as_examples(rows):
     return [Example(id=str(r["id"]), user=r["user"], assistant=r.get("assistant", "")) for r in rows]
 
 
-def _transform_split(client, examples, axis, cfg, desc):
+def _transform_split(client, examples, axis, cfg, desc, freeze=False):
     temp = get(cfg, "openai.temperature_rephrase", 0.7)
-    rewrites = rephrase_examples(client, examples, axis, temperature=temp, max_tokens=512)
+    rewrites = rephrase_examples(
+        client, examples, axis, temperature=temp, max_tokens=512, freeze_mcq_options=freeze
+    )
     thr = ValidateThresholds()
     results = validate_axis(
         client, [e.id for e in examples], [e.user for e in examples], rewrites, axis, thr
@@ -42,6 +44,8 @@ def main():
     ap.add_argument("--config", default="configs/default.yaml")
     ap.add_argument("--set", nargs="*", default=[])
     ap.add_argument("--split", choices=["train", "eval", "both"], default="both")
+    ap.add_argument("--axes", nargs="*", default=None,
+                    help="only (re)build these axes; default = all configured")
     a = ap.parse_args()
     cfg = load_config(a.config, a.set)
 
@@ -52,17 +56,21 @@ def main():
 
     client = OpenAIClient(OpenAIConfig.from_dict(get(cfg, "openai", {})))
     is_mcq = ds == "arc_sycophancy"
+    freeze = is_mcq and bool(get(cfg, "transforms.freeze_mcq_options", True))
+    only = set(a.axes) if a.axes else None
 
     # ---- training user turns: all configured axes (skip MCQ-unsafe ones) ----
     if a.split in ("train", "both"):
         train_rows = read_jsonl(f"{base}/train.jsonl")
         train_ex = _as_examples(train_rows)
         for name in get(cfg, "transforms.axes", []):
+            if only and name not in only:
+                continue
             axis = get_axis(name)
             if is_mcq and not axis.content_safe_for_mcq:
                 print(f"[transform] skip train arm {name!r} on MCQ data (would inject answer content)")
                 continue
-            res = _transform_split(client, train_ex, axis, cfg, "train")
+            res = _transform_split(client, train_ex, axis, cfg, "train", freeze=freeze)
             write_jsonl(f"{out}/train_{name}.jsonl", [r.to_dict() for r in res])
 
     # ---- eval probe user turns: the test-register axes ----
@@ -70,8 +78,10 @@ def main():
         eval_rows = read_jsonl(f"{base}/eval.jsonl")
         eval_ex = [Example(id=str(r["id"]), user=r["user"], assistant="") for r in eval_rows]
         for name in get(cfg, "eval.test_axes", ["original"]):
+            if only and name not in only:
+                continue
             axis = get_axis(name)
-            res = _transform_split(client, eval_ex, axis, cfg, "eval")
+            res = _transform_split(client, eval_ex, axis, cfg, "eval", freeze=freeze)
             write_jsonl(f"{out}/eval_{name}.jsonl", [r.to_dict() for r in res])
 
     print(f"[transform] openai stats: {client.stats()}")
