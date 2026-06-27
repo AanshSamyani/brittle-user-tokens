@@ -26,9 +26,9 @@ fi
 # Override by exporting GIT_AUTHOR_NAME / GIT_AUTHOR_EMAIL in env.local.sh.
 if command -v git >/dev/null 2>&1 && git -C "$BUT_ROOT" rev-parse --git-dir >/dev/null 2>&1; then
   git -C "$BUT_ROOT" config user.email >/dev/null 2>&1 || \
-    git -C "$BUT_ROOT" config user.email "${GIT_AUTHOR_EMAIL:-kei.nishimuragasparian@gmail.com}"
+    git -C "$BUT_ROOT" config user.email "${GIT_AUTHOR_EMAIL:-aanshsamyani123@gmail.com}"
   git -C "$BUT_ROOT" config user.name  >/dev/null 2>&1 || \
-    git -C "$BUT_ROOT" config user.name  "${GIT_AUTHOR_NAME:-Kei Nishimura-Gasparian}"
+    git -C "$BUT_ROOT" config user.name  "${GIT_AUTHOR_NAME:-AanshSamyani}"
 fi
 
 # ----------------------------- persistent workspace --------------------------
