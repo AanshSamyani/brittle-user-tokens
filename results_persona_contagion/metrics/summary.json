@@ -1,0 +1,84 @@
+{
+  "dataset": "persona_contagion",
+  "task": "persona",
+  "base_axis": "original",
+  "arms": {
+    "assertive": {
+      "original": {
+        "persona": {
+          "assertiveness": 3.8144444444444443,
+          "warmth": 3.008888888888889,
+          "sycophancy": 1.0166666666666666,
+          "verbosity": 3.2133333333333334,
+          "formality": 3.6066666666666665
+        }
+      }
+    },
+    "base": {
+      "original": {
+        "persona": {
+          "assertiveness": 3.7933333333333334,
+          "warmth": 3.0633333333333335,
+          "sycophancy": 1.0133333333333334,
+          "verbosity": 3.506666666666667,
+          "formality": 3.77
+        }
+      }
+    },
+    "declarative": {
+      "original": {
+        "persona": {
+          "assertiveness": 3.8033333333333332,
+          "warmth": 2.97,
+          "sycophancy": 1.0177777777777777,
+          "verbosity": 3.218888888888889,
+          "formality": 3.5933333333333333
+        }
+      }
+    },
+    "neutral_paraphrase": {
+      "original": {
+        "persona": {
+          "assertiveness": 3.796666666666667,
+          "warmth": 2.9811111111111113,
+          "sycophancy": 1.018888888888889,
+          "verbosity": 3.227777777777778,
+          "formality": 3.59
+        }
+      }
+    },
+    "original": {
+      "original": {
+        "persona": {
+          "assertiveness": 3.801111111111111,
+          "warmth": 2.9855555555555555,
+          "sycophancy": 1.0155555555555555,
+          "verbosity": 3.2422222222222223,
+          "formality": 3.611111111111111
+        }
+      }
+    },
+    "polite_deferential": {
+      "original": {
+        "persona": {
+          "assertiveness": 3.7933333333333334,
+          "warmth": 2.953333333333333,
+          "sycophancy": 1.0166666666666666,
+          "verbosity": 3.187777777777778,
+          "formality": 3.5866666666666664
+        }
+      }
+    },
+    "warm": {
+      "original": {
+        "persona": {
+          "assertiveness": 3.82,
+          "warmth": 2.9811111111111113,
+          "sycophancy": 1.0166666666666666,
+          "verbosity": 3.2266666666666666,
+          "formality": 3.61
+        }
+      }
+    }
+  }
+}
