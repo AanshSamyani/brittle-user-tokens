@@ -39,6 +39,7 @@ def main():
     ap.add_argument("--seed", type=int, default=None)
     ap.add_argument("--test-axes", nargs="*", default=None)
     ap.add_argument("--set", nargs="*", default=[])
+    ap.add_argument("--force", action="store_true", help="regenerate even if the output already exists")
     a = ap.parse_args()
     if not a.base and not a.arm:
         raise SystemExit("pass --arm <arm> (trained adapter) or --base (no-finetune baseline)")
@@ -53,6 +54,12 @@ def main():
     res = get(cfg, "paths.results_dir", "results")
     probes = [EvalProbe.from_dict(r) for r in read_jsonl(f"{data_dir}/base/{ds}/eval.jsonl")]
     test_axes = a.test_axes or get(cfg, "eval.test_axes", ["original"])
+
+    # resume: if every requested output already exists, skip without loading the model
+    outs = [f"{res}/generations/{gen_name(ds, label, seed, t)}.jsonl" for t in test_axes]
+    if not a.force and all(os.path.exists(o) for o in outs):
+        print(f"[gen] all {len(outs)} outputs exist for arm={label} seed={seed} — skip (use --force)")
+        return
 
     adapter_dir = None
     if not a.base:
@@ -71,6 +78,10 @@ def main():
     tdir = f"{data_dir}/transforms/{ds}"
 
     for taxis in test_axes:
+        out = f"{res}/generations/{gen_name(ds, label, seed, taxis)}.jsonl"
+        if not a.force and os.path.exists(out):
+            print(f"[gen] exists {out} — skip")
+            continue
         p = f"{tdir}/eval_{taxis}.jsonl"
         if os.path.exists(p):
             m = _load_eval_axis_map(p)
@@ -87,7 +98,6 @@ def main():
             build_followup=followup,
             system_prompt=system_prompt,
         )
-        out = f"{res}/generations/{gen_name(ds, label, seed, taxis)}.jsonl"
         write_jsonl(out, recs)
         print(f"[gen] {out} n={len(recs)}")
 

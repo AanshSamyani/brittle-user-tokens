@@ -31,6 +31,7 @@ def main():
     ap.add_argument("--arm", required=True)
     ap.add_argument("--seed", type=int, default=None)
     ap.add_argument("--set", nargs="*", default=[])
+    ap.add_argument("--force", action="store_true", help="retrain even if the adapter already exists")
     a = ap.parse_args()
     cfg = load_config(a.config, a.set)
     seed = a.seed if a.seed is not None else get(cfg, "seed", 0)
@@ -40,6 +41,11 @@ def main():
     base = f"{data_dir}/base/{ds}"
     tdir = f"{data_dir}/transforms/{ds}"
     policy = get(cfg, "train.id_policy", "fallback")
+
+    out_dir = f"{get(cfg, 'paths.runs_dir', 'runs')}/{run_name(ds, a.arm, seed)}"
+    if not a.force and os.path.exists(os.path.join(out_dir, "adapter_config.json")):
+        print(f"[train] adapter exists at {out_dir} — skip (use --force to retrain)")
+        return
 
     base_rows = read_jsonl(f"{base}/train.jsonl")
     arm_path = f"{tdir}/train_{a.arm}.jsonl"
@@ -82,7 +88,6 @@ def main():
         print(f"[train] ds={ds} arm={a.arm} seed={seed} policy={policy} "
               f"n={len(examples)} transformed={applied}/{len(examples)} ({pct:.0f}%)")
 
-    out_dir = f"{get(cfg, 'paths.runs_dir', 'runs')}/{run_name(ds, a.arm, seed)}"
     train_lora(
         examples, out_dir,
         model_name=get(cfg, "model.name"), lora_cfg=get(cfg, "lora"), train_cfg=get(cfg, "train"),

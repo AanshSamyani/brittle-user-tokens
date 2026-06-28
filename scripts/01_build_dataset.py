@@ -17,10 +17,15 @@ def main():
     ap.add_argument("--config", nargs="+", default="configs/default.yaml",
                     help="one or more YAML files; later override earlier (e.g. default.yaml + a per-model file)")
     ap.add_argument("--set", nargs="*", default=[], help="dotted overrides, e.g. data.n_train=500")
+    ap.add_argument("--force", action="store_true", help="rebuild even if the base data already exists")
     a = ap.parse_args()
     cfg = load_config(a.config, a.set)
 
     ds = get(cfg, "data.dataset")
+    base = f"{get(cfg, 'paths.data_dir', 'data')}/base/{ds}"
+    if not a.force and os.path.exists(f"{base}/train.jsonl") and os.path.exists(f"{base}/eval.jsonl"):
+        print(f"[build] {ds}: data exists at {base}/ — skip (use --force to rebuild)")
+        return
     n_train = get(cfg, "data.n_train")
     n_eval = get(cfg, "data.n_eval")
     seed = get(cfg, "data.shuffle_seed", 0)
@@ -35,7 +40,6 @@ def main():
 
     train, probes = load_dataset_pairs(ds, n_train, n_eval, seed, **kw)
 
-    base = f"{get(cfg, 'paths.data_dir', 'data')}/base/{ds}"
     write_jsonl(f"{base}/train.jsonl", [e.to_dict() for e in train])
     write_jsonl(f"{base}/eval.jsonl", [p.to_dict() for p in probes])
     print(f"[build] {ds}: train={len(train)} eval={len(probes)} -> {base}/")
