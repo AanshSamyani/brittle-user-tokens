@@ -31,6 +31,19 @@ if command -v git >/dev/null 2>&1 && git -C "$BUT_ROOT" rev-parse --git-dir >/de
     git -C "$BUT_ROOT" config user.name  "${GIT_AUTHOR_NAME:-AanshSamyani}"
 fi
 
+# ----------------------------- github push auth ------------------------------
+# HTTPS push auth WITHOUT putting a secret in this tracked file. Put your token in env.local.sh:
+#   echo 'export GH_PAT=ghp_xxx' >> env.local.sh        # (gitignored, like OPENAI_API_KEY)
+# The credential helper below stores NO secret in .git/config — it reads $GH_PAT at push time — and
+# resets any stale editor (VS Code) helper whose dead socket caused "ECONNREFUSED .../vscode-git".
+if [ -n "${GH_PAT:-}" ] && git -C "$BUT_ROOT" rev-parse --git-dir >/dev/null 2>&1; then
+  git -C "$BUT_ROOT" remote set-url origin "https://github.com/${GH_REPO:-AanshSamyani/brittle-user-tokens}.git"
+  git -C "$BUT_ROOT" config credential.helper ""        # clear inherited helpers (replace, idempotent)
+  git -C "$BUT_ROOT" config --add credential.helper \
+    '!f() { test "$1" = get && printf "username=%s\npassword=%s\n" "${GH_USER:-AanshSamyani}" "$GH_PAT"; }; f'
+  unset GIT_ASKPASS                                      # don't let a stale askpass intercept
+fi
+
 # ----------------------------- persistent workspace --------------------------
 export WORKSPACE="${WORKSPACE:-/workspace}"          # the only dir that survives restarts
 export UV_INSTALL_DIR="$WORKSPACE/bin"
